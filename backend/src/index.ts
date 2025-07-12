@@ -1,26 +1,16 @@
-console.log("Try npm run lint/fix!");
+import app from './app';
+import connectDB from './db/connect';
+import dotenv from 'dotenv';
 
-const longString = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut aliquet diam.';
+dotenv.config();
 
-const trailing = 'Semicolon'
-
-			const why={am:'I tabbed?'};
-
-const iWish = "I didn't have a trailing space..."; 
-
-const sicilian = true;;
-
-const vizzini = (!!sicilian) ? !!!sicilian : sicilian;
-
-const re = /foo   bar/;
-
-export function doSomeStuff(withThis: string, andThat: string, andThose: string[]) {
-    //function on one line
-    if(!Boolean(andThose.length)) {return false;}
-    console.log(withThis);
-    console.log(andThat);
-    console.dir(andThose);
-    console.log(longString, trailing, why, iWish, vizzini, re);
-    return;
-}
-// TODO: more examples
+connectDB()
+  .then(() => {
+    console.log('Connected to MongoDB');
+    app.listen(process.env.PORT, () => {
+      console.log(`Server is running on PORT: ${process.env.PORT}`);
+    });
+  })
+  .catch(error => {
+    console.error(error);
+  });
