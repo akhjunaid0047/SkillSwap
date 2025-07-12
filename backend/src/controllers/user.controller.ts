@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import User from '../models/user.model';
 import bcrypt from 'bcrypt';
+import { generateToken } from '../utils/tokenManager.util';
+import userModel from '../models/user.model';
 
 const signUpUser = async (req: Request, res: Response) => {
   try {
@@ -16,14 +17,14 @@ const signUpUser = async (req: Request, res: Response) => {
       skillsWanted,
     } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    const newUser = new userModel({
       name,
       email,
       password: hashedPassword,
@@ -36,7 +37,25 @@ const signUpUser = async (req: Request, res: Response) => {
     });
 
     await newUser.save();
+    res.clearCookie('auth_token', {
+      httpOnly: true,
+      domain: 'localhost',
+      signed: true,
+      path: '/',
+    });
 
+    const expiresIn = 7 * 24 * 60 * 60 * 1000;
+    const user = await userModel.findOne({email});
+    //@ts-ignore
+    const token = generateToken(user._id.toString(), email, expiresIn);
+   
+    res.cookie('auth_token', token, {
+      path: '/',
+      domain: 'localhost',
+      expires: new Date(Date.now() + expiresIn),
+      httpOnly: true,
+      signed: true,
+    });
     return res.status(201).json({ message: 'User signed up successfully' });
   } catch (error) {
     console.error('Signup error:', error);
@@ -46,7 +65,7 @@ const signUpUser = async (req: Request, res: Response) => {
 
 export const getUser= async(req:Request, res:Response)=>{
   try{
-    const users = await User.find();
+    const users = await userModel.find();
     console.log(users);
     return res.status(200).json(users);
   }catch(error){
